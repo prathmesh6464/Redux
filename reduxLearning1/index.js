@@ -14,9 +14,13 @@ const store = createStore(
 function reducerAmount(state = { amount: 1 }, action) {
   switch (action.type) {
     case "init":
-      return { amount: state.amount + action.payload };
-    case "incAmt":
-      return { amount: state.amount + action.payload };
+      return { amount: state.amount, pending: false };
+    case "inc":
+      return { amount: state.amount + action.payload, pending: false };
+    case "pending":
+      return { ...state, pending: true };
+    case "error":
+      return { amount: state.amount + action.error };
     default:
       return state;
   }
@@ -24,9 +28,7 @@ function reducerAmount(state = { amount: 1 }, action) {
 
 function reducerPoint(state = { point: 100 }, action) {
   switch (action.type) {
-    case "init":
-      return { point: state.point + action.payload };
-    case "incPnt":
+    case "inc":
       return { point: state.point + action.payload };
     default:
       return state;
@@ -34,22 +36,28 @@ function reducerPoint(state = { point: 100 }, action) {
 }
 
 //Action creators
-function incrementAmount() {
-  return { type: "incAmt", payload: 2 };
+function increment() {
+  return { type: "inc", payload: 2 };
 }
 
 function incrementPoint() {
-  return { type: "incPnt", payload: -2 };
+  return { type: "inc", payload: -2 };
 }
 
 async function init(dispatch, getState) {
-  const { data } = await axios.get("http://localhost:3000/account/1");
-  dispatch({ type: "init", payload: data.amount });
+  dispatch({ type: "pending" });
+  try {
+    const { data } = await axios.get("http://localhost:3000/accounts/1");
+    dispatch({ type: "init", payload: data.amount });
+  } catch (error) {
+    dispatch({ type: "error", error: error.message });
+  }
 }
 
 store.subscribe(() => {
   console.log(store.getState());
 });
 
-store.dispatch(incrementAmount());
+store.dispatch(increment());
 store.dispatch(incrementPoint());
+store.dispatch(init);
